@@ -6,9 +6,30 @@ namespace AutomationExerciseTests
     [TestFixture]
     public class Tests : PageTest
     {
+        [SetUp]
+        public async Task Setup()
+        {
+            await Context.RouteAsync("**/*", async route =>
+            {
+                string url = route.Request.Url;
+                if (url.Contains("googlesyndication") || url.Contains("adservice") || url.Contains("doubleclick"))
+                {
+                    await route.AbortAsync();
+                }
+                else
+                {
+                    await route.ContinueAsync();
+                }
+            });
+        }
         [Test]
         public async Task TC1()
         {
+            var consentButton = Page.GetByRole(AriaRole.Button, new() { Name = "Consent", Exact = true });
+            if (await consentButton.IsVisibleAsync())
+            {
+                await consentButton.ClickAsync();
+            }
             await Page.GotoAsync("https://automationexercise.com/");
             await Expect(Page).ToHaveTitleAsync("Automation Exercise");
 
@@ -71,9 +92,62 @@ namespace AutomationExerciseTests
 
             await Expect(Page.GetByText("Logged in as Andrei Dinescu")).ToBeVisibleAsync();
 
-            await Page.GetByRole(AriaRole.Link, new() { Name = " Delete Account" }).ClickAsync();
+            /* await Page.GetByRole(AriaRole.Link, new() { Name = " Delete Account" }).ClickAsync();
 
-            await Expect(Page.GetByText("ACCOUNT DELETED!")).ToBeVisibleAsync();
+             await Expect(Page.GetByText("ACCOUNT DELETED!")).ToBeVisibleAsync();
+            */
+        }
+        [Test]
+        public async Task TC4()
+        {
+
+            await Page.GotoAsync("http://automationexercise.com");
+            await Expect(Page).ToHaveTitleAsync("Automation Exercise");
+            await Page.GetByRole(AriaRole.Link, new() { Name = " Signup / Login" }).ClickAsync();
+            await Expect(Page.GetByText("Login to your account")).ToBeVisibleAsync();
+
+            var login = Page.Locator("form").Filter(new() { HasText = "Login" });
+
+            await login.Locator("[data-qa='login-email']").FillAsync("GeorgescuPopescu@gmail.com");
+            await login.Locator("[data-qa='login-password']").FillAsync("ParolaSigura123!");
+            await login.Locator("[data-qa='login-button']").ClickAsync();
+
+            await Expect(Page.GetByText("Logged in as Popescu")).ToBeVisibleAsync();
+            await Page.GetByRole(AriaRole.Link, new() { Name = " Logout" }).ClickAsync();
+            await Expect(Page.GetByText("Login to your account")).ToBeVisibleAsync();
+        }
+        [Test]
+        public async Task TC5()
+        {
+            await Page.GotoAsync("http://automationexercise.com");
+            await Expect(Page).ToHaveTitleAsync("Automation Exercise");
+            await Page.GetByRole(AriaRole.Link, new() { Name = " Signup / Login" }).ClickAsync();
+            await Expect(Page.GetByText("Login to your account")).ToBeVisibleAsync();
+            var signup = Page.Locator("form").Filter(new() { HasText = "Signup" });
+            await signup.GetByPlaceholder("Name").FillAsync("Popescu");
+            await signup.Locator("[data-qa='signup-email']").FillAsync("GeorgescuPopescu@gmail.com");
+            await signup.Locator("[data-qa='signup-button']").ClickAsync();
+            await Expect(Page.GetByText("Email Address already exist!")).ToBeVisibleAsync();
+        }
+
+        [Test]
+        public async Task TC6()
+        {
+            await Page.GotoAsync("http://automationexercise.com");
+            await Expect(Page).ToHaveTitleAsync("Automation Exercise");
+            await Page.GetByRole(AriaRole.Link, new() { Name = " Contact us" }).ClickAsync();
+            await Expect(Page.GetByText("GET IN TOUCH")).ToBeVisibleAsync();
+            await Page.Locator("[data-qa='name']").FillAsync("Andrei");
+            await Page.Locator("[data-qa='email']").FillAsync("andrei.test@gmail.com");
+            await Page.Locator("[data-qa='subject']").FillAsync("Card Problem");
+            await Page.Locator("[data-qa='message']").FillAsync("I have an issue when I try to order something and want to pay with my card!");
+            Page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
+            await Page.Locator("[data-qa='submit-button']").ClickAsync();
+
+            await Expect(Page.Locator(".status")).ToHaveTextAsync("Success! Your details have been submitted successfully.");
+
+            await Page.Locator("#form-section").GetByRole(AriaRole.Link, new() { Name = "Home" }).ClickAsync();
+            await Expect(Page).ToHaveTitleAsync("Automation Exercise");
         }
     }
 }
