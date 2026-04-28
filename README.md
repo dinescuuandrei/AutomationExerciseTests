@@ -20,7 +20,6 @@
 - [Design Decisions](#design-decisions)
 - [CI/CD](#cicd)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
 
 ---
 
@@ -35,7 +34,7 @@ This suite validates critical user-facing workflows on the Automation Exercise d
 | Shopping cart | Add items, quantity, price calculation, persistence |
 | Newsletter | Email subscription |
 | Contact form | Form submission with dialog handling |
-| Bonus scenarios | Cart price accuracy and session persistence after refresh |
+| Bonus scenarios | Cart price accuracy, session persistence, cross-tab cart synchronization |
 
 ---
 
@@ -201,6 +200,7 @@ All test classes inherit from `BaseTest`, which handles:
 | Test | Description |
 |---|---|
 | `TC_BONUS_PriceAndPersistence` | Set quantity to 4, add to cart, verify `total = unit price × 4`, reload page and verify total persists |
+| `TC_BONUS_CrossTabCartSynchronization` | Add a product with quantity 2, open the cart in a new browser tab via `Context.NewPageAsync()`, verify the item count is 1 and quantity shows `2` — confirming cart state is shared across tabs within the same browser context |
 
 ---
 
@@ -260,13 +260,4 @@ jobs:
 | Script path not found after build | Verify build configuration and target framework match the path in the install command |
 
 ---
-
-## Contributing
-
-Contributions, issues, and pull requests are welcome.
-
-Guidelines:
-- Keep tests deterministic — avoid time-dependent or order-dependent logic
-- Prefer `data-qa` attributes or ARIA role selectors over fragile CSS class selectors
-- Do not commit real credentials or personal data
 
