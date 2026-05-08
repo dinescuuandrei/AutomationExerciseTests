@@ -1,4 +1,6 @@
 ﻿using Microsoft.Playwright;
+using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace AutomationExerciseTests.Tests
 {
@@ -6,21 +8,24 @@ namespace AutomationExerciseTests.Tests
     public class CartTests : BaseTest
     {
         [Test]
-        public async Task TC12_AddProductsInCart()
+        public async Task AddProducts()
         {
-            await Page.GetByRole(AriaRole.Link, new() { Name = " Products" }).ClickAsync();
+            await Page.ClickAsync("text=Products");
 
-            var firstProduct = Page.Locator(".features_items .col-sm-4").First;
-            await firstProduct.HoverAsync();
+            var produs1 = Page.Locator(".single-products").First;
+            await produs1.HoverAsync();
 
-            await firstProduct.Locator(".overlay-content .add-to-cart").ClickAsync();
+            var buton = Page.Locator(".add-to-cart").First;
+            await buton.ClickAsync();
 
-            var viewCartModalLink = Page.Locator("#cartModal u");
-            await viewCartModalLink.WaitForAsync(new() { State = WaitForSelectorState.Visible });
-            await viewCartModalLink.ClickAsync();
+            var cos = Page.Locator("u");
+            await cos.WaitForAsync();
+            await cos.ClickAsync();
 
-            var cartItems = Page.Locator("#cart_info_table tbody tr");
-            await Expect(cartItems).ToHaveCountAsync(1);
+            int randuri = await Page.Locator("tbody tr").CountAsync();
+
+            Assert.That(randuri, Is.EqualTo(1));
         }
     }
+
 }

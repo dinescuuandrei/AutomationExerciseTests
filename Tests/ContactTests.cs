@@ -1,4 +1,6 @@
 ﻿using Microsoft.Playwright;
+using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace AutomationExerciseTests.Tests
 {
@@ -6,18 +8,29 @@ namespace AutomationExerciseTests.Tests
     public class ContactTests : BaseTest
     {
         [Test]
-        public async Task TC6_ContactUsForm()
+        public async Task ContactForm()
         {
-            await Page.GetByRole(AriaRole.Link, new() { Name = " Contact us" }).ClickAsync();
-            await Page.Locator("[data-qa='name']").FillAsync("Andrei");
-            await Page.Locator("[data-qa='email']").FillAsync("andrei.test@gmail.com");
-            await Page.Locator("[data-qa='subject']").FillAsync("Problem");
-            await Page.Locator("[data-qa='message']").FillAsync("Help me please");
+            await Page.ClickAsync("text=Contact us");
 
-            Page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
-            await Page.Locator("[data-qa='submit-button']").ClickAsync();
+            await Page.FillAsync("[data-qa='name']", "Andrei");
+            await Page.FillAsync("[data-qa='email']", "andrei.test@gmail.com");
+            await Page.FillAsync("[data-qa='subject']", "Card Problem");
+            await Page.FillAsync("[data-qa='message']", "Help me ! i cant pay with my card");
 
-            await Expect(Page.Locator(".status")).ToHaveTextAsync("Success! Your details have been submitted successfully.");
+            Page.Dialog += async (_, dialog) =>
+            {
+                await dialog.AcceptAsync();
+            };
+
+            await Page.ClickAsync("[data-qa='submit-button']");
+
+            var status = Page.Locator(".status");
+            await status.WaitForAsync();
+
+            string ok = await status.InnerTextAsync();
+
+            Assert.That(ok.Contains("Success!"), Is.True);
         }
     }
+
 }

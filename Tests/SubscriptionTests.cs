@@ -1,4 +1,6 @@
 ﻿using Microsoft.Playwright;
+using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace AutomationExerciseTests.Tests
 {
@@ -6,12 +8,21 @@ namespace AutomationExerciseTests.Tests
     public class SubscriptionTests : BaseTest
     {
         [Test]
-        public async Task TC10_VerifySubscription()
+        public async Task VerifySubscription()
         {
-            await Expect(Page.Locator("h2").Filter(new() { HasText = "Subscription" })).ToBeVisibleAsync();
-            await Page.GetByPlaceholder("Your email address").FillAsync("andrei.test@gmail.com");
-            await Page.Locator("#subscribe").ClickAsync();
-            await Expect(Page.Locator("#success-subscribe")).ToBeVisibleAsync();
+            var selectie = Page.Locator("h2:has-text('Subscription')");
+            var text = await selectie.InnerTextAsync();
+
+            Assert.That(text.ToUpper().Contains("SUBSCRIPTION"), Is.True);
+
+            await Page.FillAsync("#susbscribe_email", "andrei.test@gmail.com");
+            await Page.ClickAsync("#subscribe");
+
+            var mesaj = Page.Locator("#success-subscribe");
+            await mesaj.WaitForAsync();
+
+            var vizibil = await mesaj.IsVisibleAsync();
+            Assert.That(vizibil, Is.True);
         }
     }
 }

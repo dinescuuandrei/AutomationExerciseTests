@@ -1,5 +1,7 @@
 ﻿using Microsoft.Playwright;
 using Microsoft.Playwright.NUnit;
+using NUnit.Framework;
+using System.Threading.Tasks;
 
 namespace AutomationExerciseTests.Tests
 {
@@ -8,25 +10,30 @@ namespace AutomationExerciseTests.Tests
         [SetUp]
         public async Task Setup()
         {
-            await Context.RouteAsync("**/*", async route =>
+            await Context.RouteAsync("**/*", async r =>
             {
-                string url = route.Request.Url;
-                if (url.Contains("googlesyndication") || url.Contains("adservice") || url.Contains("doubleclick"))
+                string adr = r.Request.Url;
+
+                if (adr.Contains("google") || adr.Contains("doubleclick") || adr.Contains("adservice"))
                 {
-                    await route.AbortAsync();
+                    await r.AbortAsync();
                 }
                 else
                 {
-                    await route.ContinueAsync();
+                    await r.ContinueAsync();
                 }
             });
 
             await Page.GotoAsync("https://automationexercise.com/");
 
-            var consentButton = Page.GetByRole(AriaRole.Button, new() { Name = "Consent", Exact = true });
-            if (await consentButton.IsVisibleAsync())
+            try
             {
-                await consentButton.ClickAsync();
+                var btn = Page.Locator("button:has-text('Consent')");
+                await btn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 2500 });
+                await btn.ClickAsync();
+            }
+            catch
+            {
             }
         }
     }

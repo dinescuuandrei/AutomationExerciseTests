@@ -55,12 +55,12 @@ This suite validates critical user-facing workflows on the Automation Exercise d
 AutomationExerciseTests/
 ├── Tests/
 │   ├── BaseTest.cs              # Shared setup: ad blocking, navigation, consent
-│   ├── AccountTests.cs          # TC1, TC2, TC4, TC5 — registration, login, logout
-│   ├── ProductTests.cs          # TC7, TC8, TC9 — catalog navigation and search
-│   ├── CartTests.cs             # TC12 — cart operations
-│   ├── ContactTests.cs          # TC6 — contact form submission
-│   ├── SubscriptionTests.cs     # TC10 — newsletter subscription
-│   └── BonusTests.cs            # TC_BONUS — cart price and persistence checks
+│   ├── AccountTests.cs          # RegisterUser, LoginCorrect, Logout, RegisterExistingEmail
+│   ├── ProductTests.cs          # VerifyTestCase, VerifyProduct, SearchProduct
+│   ├── CartTests.cs             # AddProducts
+│   ├── ContactTests.cs          # ContactForm
+│   ├── SubscriptionTests.cs     # VerifySubscription
+│   └── BonusTests.cs            # CheckCartTotal, CartVisibleInNewTab
 ├── AutomationExerciseTests.csproj
 ├── .runsettings                 # NUnit and Playwright configuration
 ├── .gitignore
@@ -117,12 +117,12 @@ dotnet test
 
 **Run a specific test by name**
 ```powershell
-dotnet test --filter "TestName=TC1"
+dotnet test --filter "TestName=RegisterUser"
 ```
 
 **Run a specific test by fully qualified name**
 ```powershell
-dotnet test --filter "FullyQualifiedName=AutomationExerciseTests.Tests.TC1"
+dotnet test --filter "FullyQualifiedName=AutomationExerciseTests.Tests.AccountTests.RegisterUser"
 ```
 
 **Run in headed/debug mode**
@@ -144,9 +144,9 @@ dotnet test --verbosity detailed
 ## Test Coverage
 
 All test classes inherit from `BaseTest`, which handles:
-- Blocking ad-serving domains (`googlesyndication`, `adservice`, `doubleclick`) to improve reliability
+- Blocking ad-serving domains (`google`, `adservice`, `doubleclick`) to improve reliability
 - Navigation to the homepage before each test
-- Automatic dismissal of GDPR consent dialogs
+- Automatic dismissal of GDPR consent dialogs (2500ms timeout)
 
 ---
 
@@ -154,10 +154,10 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC1_RegisterUser` | Full signup flow: fill registration form, verify account created, then delete account |
-| `TC2_LoginCorrect` | Login with valid credentials and verify "Logged in as" message |
-| `TC4_Logout` | Login then logout and verify redirect to login page |
-| `TC5_RegisterExistingEmail` | Attempt signup with a duplicate email and verify error message |
+| `RegisterUser` | Full signup flow: fills the registration form with random email, verifies account creation, then deletes the account |
+| `LoginCorrect` | Logs in with valid credentials and verifies "Logged in as Andrei Dinescu" message |
+| `Logout` | Logs in then logs out and verifies redirect to the login page |
+| `RegisterExistingEmail` | Attempts signup with a duplicate email and verifies the error message |
 
 ---
 
@@ -165,9 +165,9 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC7_VerifyTestCasesPage` | Navigate to the Test Cases page via navbar and verify URL |
-| `TC8_VerifyProductDetails` | Open a product detail page and verify name, category, availability, and brand |
-| `TC9_SearchProduct` | Search for "Polo", verify results heading and at least one product visible |
+| `VerifyTestCase` | Navigates to the Test Cases page via the navbar link and verifies the URL |
+| `VerifyProduct` | Opens the All Products page, clicks the first product, and verifies name, category, availability, and brand are visible |
+| `SearchProduct` | Searches for "Polo", verifies the "SEARCHED PRODUCTS" heading and that at least one result is visible |
 
 ---
 
@@ -175,7 +175,7 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC12_AddProductsInCart` | Hover first product, add to cart, confirm modal appears, view cart and verify 1 item |
+| `AddProducts` | Navigates to Products, hovers the first item, adds it to cart, clicks the cart icon, and verifies exactly 1 row in the cart table |
 
 ---
 
@@ -183,7 +183,7 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC6_ContactUsForm` | Fill the contact form, accept the browser dialog on submit, verify success message |
+| `ContactForm` | Fills the contact form (name, email, subject, message), accepts the browser dialog on submit, and verifies the success status message |
 
 ---
 
@@ -191,7 +191,7 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC10_VerifySubscription` | Locate subscription widget on homepage, enter email, submit and verify success banner |
+| `VerifySubscription` | Locates the Subscription widget on the homepage, verifies the heading text, enters an email, submits, and verifies the success banner is visible |
 
 ---
 
@@ -199,16 +199,16 @@ All test classes inherit from `BaseTest`, which handles:
 
 | Test | Description |
 |---|---|
-| `TC_BONUS_PriceAndPersistence` | Set quantity to 4, add to cart, verify `total = unit price × 4`, reload page and verify total persists |
-| `TC_BONUS_CrossTabCartSynchronization` | Add a product with quantity 2, open the cart in a new browser tab via `Context.NewPageAsync()`, verify the item count is 1 and quantity shows `2` — confirming cart state is shared across tabs within the same browser context |
+| `CheckCartTotal` | Sets quantity to 4, adds the product to cart, verifies `total = unit price × 4`, reloads the page and confirms the total persists after refresh |
+| `CartVisibleInNewTab` | Adds a product with quantity 2, opens the cart in a new browser tab via `Context.NewPageAsync()`, and verifies the cart contains 1 row with quantity `2` — confirming cart state is shared across tabs within the same browser context |
 
 ---
 
 ## Design Decisions
 
-- **Selector strategy:** Role-based selectors and `data-qa` attributes are preferred over CSS classes or XPath for better resilience to layout changes.
-- **Ad blocking:** Route interception in `BaseTest` aborts ad network requests before each test, reducing flakiness.
-- **Hard-coded test data:** Current tests use fixed credentials and user data. For improved repeatability consider externalizing this into a config file or test fixtures.
+- **Selector strategy:** Role-based selectors, `data-qa` attributes, and text-based locators are preferred over CSS classes or XPath for better resilience to layout changes.
+- **Ad blocking:** Route interception in `BaseTest` aborts requests to `google`, `doubleclick`, and `adservice` domains before each test, reducing flakiness.
+- **Hard-coded test data:** Some tests (`LoginCorrect`, `Logout`, `RegisterExistingEmail`) rely on credentials that must already exist on the site. `RegisterUser` generates a random email per run to avoid conflicts.
 
 ---
 
@@ -256,8 +256,6 @@ jobs:
 |---|---|
 | Elements not found / test flakiness | Run in headed mode (`PWDEBUG=1`) to observe browser behavior |
 | Playwright browser not found | Re-run the Playwright installer step |
-| Login tests fail (`TC2`, `TC4`) | The hard-coded credentials must already exist on the site; register them manually first or update the values |
+| `LoginCorrect` or `Logout` fails | The hard-coded credentials must already exist on the site; register them manually first or update the values in the test |
+| `RegisterUser` fails at account creation | The random email may have been used before; re-run the test |
 | Script path not found after build | Verify build configuration and target framework match the path in the install command |
-
----
-
